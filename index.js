@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const express = require('express');
 const {
   ChannelType,
   Client,
@@ -10,6 +11,8 @@ const {
 const ms = require('ms');
 const { AMOUNT_OPTION_NAME, TIME_OPTION_NAME } = require('./commands');
 
+const app = express();
+const PORT = process.env.PORT || 3000;
 const DEFAULT_DURATION = '5m';
 const VALID_TIME_PATTERN = /^\d+(s|m|h|d)$/i;
 const MAX_TIMEOUT_MS = 28 * 24 * 60 * 60 * 1000;
@@ -25,6 +28,14 @@ const {
 if (!BOT_TOKEN || !GUILD_ID || !MUTE_ROLE_ID || !TARGET_ID) {
   throw new Error('Thieu BOT_TOKEN, GUILD_ID, MUTE_ROLE_ID hoac TARGET_ID trong file .env.');
 }
+
+app.get('/', (req, res) => {
+  res.send('Bot đang chạy');
+});
+
+app.listen(PORT, () => {
+  console.log(`Web server dang lang nghe tren cong ${PORT}`);
+});
 
 const client = new Client({
   intents: [
