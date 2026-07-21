@@ -13,6 +13,8 @@ const { AMOUNT_OPTION_NAME, TIME_OPTION_NAME } = require('./commands');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const COMMAND_ERROR_MESSAGE =
+  'Bị lỗi rồi! Hình như tôi không đủ quyền hoặc mục tiêu có Role cao hơn tôi.';
 const DEFAULT_DURATION = '5m';
 const VALID_TIME_PATTERN = /^\d+(s|m|h|d)$/i;
 const MAX_TIMEOUT_MS = 28 * 24 * 60 * 60 * 1000;
@@ -25,16 +27,16 @@ const {
   TARGET_ID = '524438745772982272',
 } = process.env;
 
-if (!BOT_TOKEN || !GUILD_ID || !MUTE_ROLE_ID || !TARGET_ID) {
-  throw new Error('Thieu BOT_TOKEN, GUILD_ID, MUTE_ROLE_ID hoac TARGET_ID trong file .env.');
-}
-
 app.get('/', (req, res) => {
   res.send('Bot đang chạy');
 });
 
-app.listen(PORT, () => {
-  console.log(`Web server dang lang nghe tren cong ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`Web server đang lang nghe trên cổng ${PORT}`);
+});
+
+server.on('error', (error) => {
+  console.error('Lỗi web server:', error);
 });
 
 const client = new Client({
@@ -46,6 +48,36 @@ const client = new Client({
 });
 
 const muteTimers = new Map();
+
+async function replyCommandError(interaction) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({ content: COMMAND_ERROR_MESSAGE });
+      return;
+    }
+
+    await interaction.reply({
+      content: COMMAND_ERROR_MESSAGE,
+      ephemeral: true,
+    });
+  } catch (replyError) {
+    console.error('Không thể gửi thông báo lỗi về Discord:', replyError);
+  }
+}
+
+function logMissingEnv() {
+  const missingEnvVars = [];
+
+  if (!BOT_TOKEN) missingEnvVars.push('BOT_TOKEN');
+  if (!GUILD_ID) missingEnvVars.push('GUILD_ID');
+  if (!MUTE_ROLE_ID) missingEnvVars.push('MUTE_ROLE_ID');
+  if (!TARGET_ID) missingEnvVars.push('TARGET_ID');
+
+  if (missingEnvVars.length > 0) {
+    console.error(`Thiếu biến môi trường: ${missingEnvVars.join(', ')}.`);
+    console.error('Web server vẫn chạy, nhưng Discord bot có thể không hoạt động đúng.');
+  }
+}
 
 function parseTime(input) {
   const rawValue = (input || DEFAULT_DURATION).trim().toLowerCase();
@@ -73,7 +105,7 @@ async function getTargetMember(guild) {
 async function ensureGuildInteraction(interaction) {
   if (!interaction.inGuild() || interaction.guildId !== GUILD_ID) {
     await interaction.reply({
-      content: 'Lenh nay chi duoc dung trong server da cau hinh.',
+      content: 'Lệnh này chỉ được sử dụng trong server đã cấu hình.',
       ephemeral: true,
     });
     return false;
@@ -83,11 +115,12 @@ async function ensureGuildInteraction(interaction) {
 }
 
 async function handleTimeout(interaction) {
+  try {
   const botMember = await interaction.guild.members.fetchMe();
 
   if (!botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
     await interaction.reply({
-      content: 'Bot dang thieu quyen Moderate Members.',
+      content: 'Bot đang thiếu quyền Moderate Members.',
       ephemeral: true,
     });
     return;
@@ -97,7 +130,7 @@ async function handleTimeout(interaction) {
 
   if (!parsedTime) {
     await interaction.reply({
-      content: 'Vui long nhap dung dinh dang (VD: 30s, 5m, 2h).',
+      content: 'Vui lòng nhập đúng định dạng (VD: 30s, 5m, 2h).',
       ephemeral: true,
     });
     return;
@@ -105,7 +138,7 @@ async function handleTimeout(interaction) {
 
   if (parsedTime.durationMs > MAX_TIMEOUT_MS) {
     await interaction.reply({
-      content: 'Discord chi ho tro timeout toi da 28d.',
+        content: 'Discord chỉ hỗ trợ tối đa 28d.',
       ephemeral: true,
     });
     return;
@@ -117,16 +150,21 @@ async function handleTimeout(interaction) {
   await targetMember.timeout(parsedTime.durationMs, `timeout_phongdo by ${interaction.user.tag}`);
 
   await interaction.editReply(
-    `Da cho <@${TARGET_ID}> ra goc dung hong gio trong ${parsedTime.label}.`,
+    `Đã cho <@${TARGET_ID}> ra góc đứng chờ trong ${parsedTime.label}.`,
   );
+  } catch (error) {
+    console.error('Lỗi khi timeout:', error);
+    await replyCommandError(interaction);
+  }
 }
 
 async function handleMute(interaction) {
+  try {
   const botMember = await interaction.guild.members.fetchMe();
 
   if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
     await interaction.reply({
-      content: 'Bot dang thieu quyen Manage Roles.',
+      content: 'Bot đang thiếu quyền Manage Roles.',
       ephemeral: true,
     });
     return;
@@ -144,7 +182,7 @@ async function handleMute(interaction) {
 
   if (parsedTime.durationMs > MAX_SET_TIMEOUT_MS) {
     await interaction.reply({
-      content: 'Thoi gian mute role toi da la 24d vi gioi han bo dem cua Node.js.',
+      content: 'Thời gian mute role tối đa là 24d vì giới hạn bộ nhớ của Node.js.',
       ephemeral: true,
     });
     return;
@@ -156,7 +194,7 @@ async function handleMute(interaction) {
   await targetMember.roles.add(MUTE_ROLE_ID, `mute_phongdo by ${interaction.user.tag}`);
 
   await interaction.editReply(
-    `Da dan bang keo mieng <@${TARGET_ID}> trong ${parsedTime.label}.`,
+    `Đã đan băng keo miệng <@${TARGET_ID}> trong ${parsedTime.label}.`,
   );
 
   const existingTimer = muteTimers.get(interaction.guildId);
@@ -169,23 +207,28 @@ async function handleMute(interaction) {
     try {
       const freshMember = await getTargetMember(interaction.guild);
       await freshMember.roles.remove(MUTE_ROLE_ID, 'mute_phongdo expired');
-      await interaction.channel?.send('Da thao bang keo.');
+      await interaction.channel?.send('Đã tháo băng keo.');
     } catch (error) {
-      console.error('Khong the go mute role sau khi het gio:', error);
+      console.error('Lỗi: Không thể gỡ mute role sau khi hết giờ:', error);
     } finally {
       muteTimers.delete(interaction.guildId);
     }
   }, parsedTime.durationMs);
 
   muteTimers.set(interaction.guildId, timer);
+  } catch (error) {
+    console.error('Lỗi khi mute:', error);
+    await replyCommandError(interaction);
+  }
 }
 
 async function handleUnmute(interaction) {
+  try {
   const botMember = await interaction.guild.members.fetchMe();
 
   if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
     await interaction.reply({
-      content: 'Bot dang thieu quyen Manage Roles.',
+      content: 'Bot đang thiếu quyền Manage Roles.',
       ephemeral: true,
     });
     return;
@@ -203,15 +246,20 @@ async function handleUnmute(interaction) {
     muteTimers.delete(interaction.guildId);
   }
 
-  await interaction.editReply(`Da thao bang keo cho <@${TARGET_ID}>.`);
+  await interaction.editReply(`Đã tháo băng keo cho <@${TARGET_ID}>.`);
+  } catch (error) {
+    console.error('Lỗi khi unmute:', error);
+    await replyCommandError(interaction);
+  }
 }
 
 async function handleUntimeout(interaction) {
+  try {
   const botMember = await interaction.guild.members.fetchMe();
 
   if (!botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
     await interaction.reply({
-      content: 'Bot dang thieu quyen Moderate Members.',
+      content: 'Bot đang thiếu quyền Moderate Members.',
       ephemeral: true,
     });
     return;
@@ -222,10 +270,15 @@ async function handleUntimeout(interaction) {
   const targetMember = await getTargetMember(interaction.guild);
   await targetMember.timeout(null, `untimeout_phongdo by ${interaction.user.tag}`);
 
-  await interaction.editReply(`Da huy timeout cho <@${TARGET_ID}>.`);
+  await interaction.editReply(`Đã hủy timeout cho <@${TARGET_ID}>.`);
+  } catch (error) {
+    console.error('Lỗi khi hủy timeout:', error);
+    await replyCommandError(interaction);
+  }
 }
 
 async function handlePurge(interaction) {
+  try {
   const amount = interaction.options.getInteger(AMOUNT_OPTION_NAME) ?? 10;
 
   if (
@@ -235,7 +288,7 @@ async function handlePurge(interaction) {
     typeof interaction.channel.bulkDelete !== 'function'
   ) {
     await interaction.reply({
-      content: 'Lenh nay chi dung duoc trong kenh text cua server.',
+      content: 'Lệnh này chỉ dùng được trong kênh text của server.',
       ephemeral: true,
     });
     return;
@@ -246,7 +299,7 @@ async function handlePurge(interaction) {
   const botMember = await interaction.guild.members.fetchMe();
 
   if (!botMember.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-    await interaction.editReply('Bot dang thieu quyen Manage Messages.');
+    await interaction.editReply('Bot đang thiếu quyền Manage Messages.');
     return;
   }
 
@@ -254,19 +307,31 @@ async function handlePurge(interaction) {
   const targetMessages = fetchedMessages.filter((message) => message.author.id === TARGET_ID);
 
   if (targetMessages.size === 0) {
-    await interaction.editReply('Khong tim thay tin nhan nao cua PhongDo trong khoang da quet.');
+    await interaction.editReply('Không tìm thấy tin nhắn nào mới nhất của Phong Đỗ.');
     setTimeout(() => interaction.deleteReply().catch(() => undefined), 5_000);
     return;
   }
 
   const deletedMessages = await interaction.channel.bulkDelete(targetMessages, true);
 
-  await interaction.editReply(`Da don dep ${deletedMessages.size} tin nhan cua <@${TARGET_ID}>.`);
+  await interaction.editReply(`Đã dọn ${deletedMessages.size} tin nhắn sủa dơ của <@${TARGET_ID}>.`);
   setTimeout(() => interaction.deleteReply().catch(() => undefined), 5_000);
+  } catch (error) {
+    console.error('Lỗi khi dọn tin nhắn:', error);
+    await replyCommandError(interaction);
+  }
 }
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Bot da dang nhap: ${readyClient.user.tag}`);
+});
+
+client.on('error', (error) => {
+  console.error('Lỗi Discord client:', error);
+});
+
+client.on('shardError', (error) => {
+  console.error('Lỗi kết nối Discord gateway:', error);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -308,7 +373,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`Loi khi xu ly /${interaction.commandName}:`, error);
 
     const response = {
-      content: 'Co loi xay ra khi xu ly lenh. Kiem tra console de xem chi tiet.',
+      content: 'Đã có lỗi xảy ra khi xử lý lệnh, vui lòng kiểm tra console để xem chi tiết.',
       ephemeral: true,
     };
 
@@ -320,4 +385,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-client.login(BOT_TOKEN);
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled promise rejection:', error);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+});
+
+logMissingEnv();
+
+if (BOT_TOKEN) {
+  client.login(BOT_TOKEN).catch((error) => {
+    console.error('Lỗi đăng nhập discord bot:', error);
+  });
+} else {
+  console.error('Lỗi: Không thể đăng nhập Discord bot vì thiếu BOT_TOKEN.');
+}
