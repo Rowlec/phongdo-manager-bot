@@ -360,8 +360,58 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     try {
-        await message.channel.send('MESSI LÀ THẰNG CHÓ NGU LOLOOLLOL');
-        await message.channel.send('https://klipy.com/gifs/tll4k-messi');
+        await message.channel.send('MESSI LÀ THẰNG CHÓ NGU LOLOOLLOL' + '\n' + 'https://klipy.com/gifs/tll4k-messi');
+    } catch (error) {
+        console.error('Không thể gửi tin nhắn:', error);
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+    const exactWordRegex = /(?<![\p{L}\p{N}_])lmh(?![\p{L}\p{N}_])/iu;
+
+    if (!exactWordRegex.test(message.content)) {
+        return;
+    }
+
+    try {
+        await message.channel.send('https://media.discordapp.net/attachments/1471032678739607666/1561750746934804570/476819257_594089113600190_7242581795811065303_n.png?ex=6ad77d39&is=6ad62bb9&hm=f0591578c67ab32e0afec7a77e818e76475f3d2866c2fefa79ed2ac27dea593f&=&format=webp&quality=lossless&width=768&height=768');
+    } catch (error) {
+        console.error('Không thể gửi tin nhắn:', error);  
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+    const exactWordRegex = /(?<![\p{L}\p{N}_])huu gia(?![\p{L}\p{N}_])/iu;
+
+    if (!exactWordRegex.test(message.content)) {
+        return;
+    }
+
+    try {
+        await message.channel.send('https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless');
+    } catch (error) {
+        console.error('Không thể gửi tin nhắn:', error);  
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+    const exactWordRegex = /(?<![\p{L}\p{N}_])bac ho(?![\p{L}\p{N}_])/iu;
+
+    if (!exactWordRegex.test(message.content)) {
+        return;
+    }
+
+    try {
+        await message.channel.send('câm mẹ đi thằng già khang hoàng');
     } catch (error) {
         console.error('Không thể gửi tin nhắn:', error);
     }
