@@ -45,6 +45,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -346,6 +347,24 @@ client.on('error', (error) => {
 
 client.on('shardError', (error) => {
   console.error('Lỗi kết nối Discord gateway:', error);
+});
+
+client.on(Events.MessageCreate, async (message) => {
+  if (
+    message.guildId !== GUILD_ID ||
+    !message.inGuild() ||
+    message.author.bot ||
+    message.webhookId ||
+    !/(?<![\p{L}\p{N}_])phongdo(?![\p{L}\p{N}_])/iu.test(message.content)
+  ) {
+    return;
+  }
+
+  try {
+    await message.channel.send('knock knock');
+  } catch (error) {
+    console.error('Không thể gửi knock knock:', error);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
