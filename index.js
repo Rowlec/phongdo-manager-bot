@@ -10,6 +10,7 @@ const {
 } = require('discord.js');
 const ms = require('ms');
 const { AMOUNT_OPTION_NAME, TIME_OPTION_NAME } = require('./commands');
+const { purgeTargetMessages } = require('./purge');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -298,23 +299,36 @@ async function handlePurge(interaction) {
 
   const botMember = await interaction.guild.members.fetchMe();
 
-  if (!botMember.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-    await interaction.editReply('Bot đang thiếu quyền Manage Messages.');
+  const requiredPermissions = [
+    PermissionsBitField.Flags.ViewChannel,
+    PermissionsBitField.Flags.ReadMessageHistory,
+    PermissionsBitField.Flags.ManageMessages,
+  ];
+  if (!interaction.channel.permissionsFor(botMember)?.has(requiredPermissions)) {
+    await interaction.editReply('Bot cần quyền View Channel, Read Message History và Manage Messages trong kênh này.');
     return;
   }
 
-  const fetchedMessages = await interaction.channel.messages.fetch({ limit: amount });
-  const targetMessages = fetchedMessages.filter((message) => message.author.id === TARGET_ID);
+  const { deletedCount, matchedCount, error } = await purgeTargetMessages(
+    interaction.channel, TARGET_ID, amount, interaction.id,
+  );
 
-  if (targetMessages.size === 0) {
-    await interaction.editReply('Không tìm thấy tin nhắn nào mới nhất của Phong Đỗ.');
+  if (matchedCount === 0) {
+    await interaction.editReply('Không tìm thấy tin nhắn nào của Phong Đỗ trong lịch sử kênh bot đọc được.');
     setTimeout(() => interaction.deleteReply().catch(() => undefined), 5_000);
     return;
   }
 
-  const deletedMessages = await interaction.channel.bulkDelete(targetMessages, true);
-
-  await interaction.editReply(`Đã dọn ${deletedMessages.size} tin nhắn sủa dơ của <@${TARGET_ID}>.`);
+  let result = `Đã dọn ${deletedCount}/${amount} tin nhắn của <@${TARGET_ID}>.`;
+  if (error) {
+    console.error('Lỗi khi xóa tin nhắn đã tìm được:', error);
+    result += ' Quá trình xóa bị gián đoạn. Kiểm tra quyền của bot và Logs.';
+  } else if (matchedCount < amount) {
+    result += ` Chỉ tìm thấy ${matchedCount} tin nhắn trong lịch sử kênh bot đọc được.`;
+  } else if (deletedCount < matchedCount) {
+    result += ' Một số tin nhắn đã bị xóa trước đó.';
+  }
+  await interaction.editReply(result);
   setTimeout(() => interaction.deleteReply().catch(() => undefined), 5_000);
   } catch (error) {
     console.error('Lỗi khi dọn tin nhắn:', error);
