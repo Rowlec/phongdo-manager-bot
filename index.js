@@ -394,7 +394,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     try {
-        await message.channel.send('https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless');
+        await message.channel.send('REST IN PEACE HUU GIA CHET' + '\n' + 'https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless');
     } catch (error) {
         console.error('Không thể gửi tin nhắn:', error);  
     }
@@ -411,11 +411,68 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     try {
-        await message.channel.send('câm mẹ đi thằng già khang hoàng');
+        await message.channel.send('câm cmm đi th già khang hoàng');
     } catch (error) {
         console.error('Không thể gửi tin nhắn:', error);
     }
 });
+
+client.on(Events.MessageCreate, async (message) => {
+    // Lọc nhanh các điều kiện cơ bản
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+
+    // Chuyển toàn bộ tin nhắn thành chữ thường và loại bỏ dấu tiếng Việt để xử lý chính xác
+    const cleanContent = message.content
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
+
+    // Regex bắt chính xác cụm "tommy tung" hoặc từ "tommy" đứng độc lập
+    const exactWordRegex = /(?<![\p{L}\p{N}_])(tommy tung|tommy)(?![\p{L}\p{N}_])/iu;
+
+    if (!exactWordRegex.test(cleanContent)) {
+        return;
+    }
+
+    try {
+        await message.channel.send('https://media.discordapp.net/attachments/1273585271446966383/1302246591687561216/427756124_3685305565081403_7862583321640026974_n.png?ex=6ad75d26&is=6ad60ba6&hm=7195ba154f26a18d20252fd6bd90f256cdef8be73af3c1d81b8cb38c5c8cd627&=&format=webp&quality=lossless');
+    } catch (error) {
+        console.error('Không thể gửi ảnh thằng ngu tommy:', error);  
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    // Lọc nhanh các điều kiện cơ bản
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+
+    // Chuyển toàn bộ tin nhắn thành chữ thường và loại bỏ dấu tiếng Việt để xử lý chính xác
+    const cleanContent = message.content
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
+
+    // Chỉ cần chứa "vlr" hoặc "valorant" (ví dụ: "chơi valorantko", "vlrnha" đều bắt được)
+    const containsKeyword = cleanContent.includes("vlr") || cleanContent.includes("valorant");
+
+    if (!containsKeyword) {
+        return;
+    }
+
+    try {
+        // Thay link ảnh hoặc tin nhắn phản hồi của bạn vào đây
+        await message.channel.send('https://i.pinimg.com/736x/5c/6d/d4/5c6dd43c4911e1bf3badb8053c18e565.jpg'); 
+    } catch (error) {
+        console.error('Không thể gửi tin nhắn phản hồi Valorant:', error);  
+    }
+});
+
+
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) {
