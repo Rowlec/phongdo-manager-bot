@@ -196,7 +196,7 @@ async function handleMute(interaction) {
   await targetMember.roles.add(MUTE_ROLE_ID, `mute_phongdo by ${interaction.user.tag}`);
 
   await interaction.editReply(
-    `Đã đan băng keo miệng <@${TARGET_ID}> trong ${parsedTime.label}.`,
+    `Đã mute chết cha <@${TARGET_ID}> trong ${parsedTime.label}.`,
   );
 
   const existingTimer = muteTimers.get(interaction.guildId);
@@ -209,7 +209,7 @@ async function handleMute(interaction) {
     try {
       const freshMember = await getTargetMember(interaction.guild);
       await freshMember.roles.remove(MUTE_ROLE_ID, 'mute_phongdo expired');
-      await interaction.channel?.send('Đã tháo băng keo.');
+      await interaction.channel?.send('Đã gỡ mute.');
     } catch (error) {
       console.error('Lỗi: Không thể gỡ mute role sau khi hết giờ:', error);
     } finally {
@@ -248,7 +248,7 @@ async function handleUnmute(interaction) {
     muteTimers.delete(interaction.guildId);
   }
 
-  await interaction.editReply(`Đã tháo băng keo cho <@${TARGET_ID}>.`);
+  await interaction.editReply(`Đã gỡ mute cho <@${TARGET_ID}>.`);
   } catch (error) {
     console.error('Lỗi khi unmute:', error);
     await replyCommandError(interaction);
@@ -350,21 +350,21 @@ client.on('shardError', (error) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-  if (
-    message.guildId !== GUILD_ID ||
-    !message.inGuild() ||
-    message.author.bot ||
-    message.webhookId ||
-    !/(?<![\p{L}\p{N}_])phongdo(?![\p{L}\p{N}_])/iu.test(message.content)
-  ) {
-    return;
-  }
+    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+        return;
+    }
+    const exactWordRegex = /(?<![\p{L}\p{N}_])messi(?![\p{L}\p{N}_])/iu;
 
-  try {
-    await message.channel.send('knock knock');
-  } catch (error) {
-    console.error('Không thể gửi knock knock:', error);
-  }
+    if (!exactWordRegex.test(message.content)) {
+        return;
+    }
+
+    try {
+        await message.channel.send('MESSI LÀ THẰNG CHÓ NGU LOLOOLLOL');
+        await message.channel.send('https://klipy.com/gifs/tll4k-messi');
+    } catch (error) {
+        console.error('Không thể gửi tin nhắn:', error);
+    }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
