@@ -349,130 +349,112 @@ client.on('shardError', (error) => {
   console.error('Lỗi kết nối Discord gateway:', error);
 });
 
-client.on(Events.MessageCreate, async (message) => {
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-    const exactWordRegex = /(?<![\p{L}\p{N}_])messi(?![\p{L}\p{N}_])/iu;
+// Thêm hoặc sửa từ khóa, phản hồi tại đây. Mỗi mục khớp sẽ gửi một phản hồi.
+// normalize: bỏ dấu tiếng Việt; exclude: bỏ qua mục này nếu khớp nội dung chữ thường.
+const messageResponses = [
+  {
+    name: 'messi',
+    pattern: /(?<![\p{L}\p{N}_])messi(?![\p{L}\p{N}_])/iu,
+    response: 'MESSI LÀ THẰNG CHÓ NGU LOLOOLLOL' + '\n' + 'https://klipy.com/gifs/tll4k-messi',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+  {
+    name: 'lmh',
+    pattern: /(?<![\p{L}\p{N}_])lmh(?![\p{L}\p{N}_])/iu,
+    response: 'https://media.discordapp.net/attachments/1471032678739607666/1561750746934804570/476819257_594089113600190_7242581795811065303_n.png?ex=6ad77d39&is=6ad62bb9&hm=f0591578c67ab32e0afec7a77e818e76475f3d2866c2fefa79ed2ac27dea593f&=&format=webp&quality=lossless&width=768&height=768',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+  {
+    name: 'huu gia',
+    pattern: /(?<![\p{L}\p{N}_])huu gia(?![\p{L}\p{N}_])/iu,
+    response: 'REST IN PEACE HUU GIA CHET' + '\n' + 'https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+  {
+    name: 'bac ho',
+    pattern: /(?<![\p{L}\p{N}_])bac ho(?![\p{L}\p{N}_])/iu,
+    response: 'câm cmm đi th già khang hoàng',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+  {
+    name: 'tommy',
+    pattern: /(?<![\p{L}\p{N}_])(tommy tung|tommy)(?![\p{L}\p{N}_])/iu,
+    normalize: true,
+    response: 'https://media.discordapp.net/attachments/1273585271446966383/1302246591687561216/427756124_3685305565081403_7862583321640026974_n.png?ex=6ad75d26&is=6ad60ba6&hm=7195ba154f26a18d20252fd6bd90f256cdef8be73af3c1d81b8cb38c5c8cd627&=&format=webp&quality=lossless',
+    errorMessage: 'Không thể gửi ảnh thằng ngu tommy:',
+  },
+  {
+    name: 'valorant',
+    // Bọc cụm HOẶC trong ngoặc đơn ( ) và thêm ranh giới từ ở hai đầu
+    pattern: /(?<![\p{L}\p{N}_])(vlr|valorant)(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    response: 'https://i.pinimg.com/736x/5c/6d/d4/5c6dd43c4911e1bf3badb8053c18e565.jpg',
+    errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
+  },
+  {
+    name: 'khon',
+    pattern: /(?<![\p{L}\p{N}_])khon(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    exclude: /(?<![\p{L}\p{N}_])(khốn|khón)(?![\p{L}\p{N}_])/u,
+    response: 'https://klipy.com/gifs/an-iq-too-high-raven',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+  {
+    name: 'gdtx',
+    pattern: /(?<![\p{L}\p{N}_])(gdtx|clarx|hao hiep)(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    response: 'https://tenor.com/view/haohiep-gdtx-clark-fudi-h%C3%A0o-hi%E1%BB%87p-gif-6003518867124149645',
+    errorMessage: 'Không thể gửi tin nhắn:',
+  },
+    {
+    name: 'xui',
+    excludePattern: /(?<![\p{L}\p{N}_])(xúi|xủi|xùi|xụi|xũi|xúi)(?![\p{L}\p{N}_])/u,
+    pattern: /(?<![\p{L}\p{N}_])xui(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
+    errorMessage: 'Không thể gửi tin nhắn phản hồi từ xui:',
+  },
+  {
+    name: 'xg',
+    excludePattern: /(?<![\p{L}\p{N}_])(xóng|xỏng|xòng|xọng|xõng)(?![\p{L}\p{N}_])/u,
+    pattern: /(?<![\p{L}\p{N}_])xg,xog,xong(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
+    errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
+  },
+  {
+    name:'hiep dam',
+    pattern: /(?<![\p{L}\p{N}_])(hiep dam|hiếp dâm|rape)(?![\p{L}\p{N}_])/u,
+    normalize: true,
+    response: 'https://klipy.com/gifs/la-peace-kai',
+    errorMessage: 'Không thể gửi tin nhắn phản hồi từ rape',
+  }
+];
 
-    if (!exactWordRegex.test(message.content)) {
-        return;
+client.on(Events.MessageCreate, async (message) => {
+  if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
+    return;
+  }
+
+  const contentLower = message.content.toLowerCase();
+  const cleanContent = contentLower
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
+
+  await Promise.all(messageResponses.map(async (rule) => {
+    const content = rule.normalize ? cleanContent : message.content;
+    if (rule.exclude?.test(contentLower) || !rule.pattern.test(content)) {
+      return;
     }
 
     try {
-        await message.channel.send('MESSI LÀ THẰNG CHÓ NGU LOLOOLLOL' + '\n' + 'https://klipy.com/gifs/tll4k-messi');
+      await message.channel.send(rule.response);
     } catch (error) {
-        console.error('Không thể gửi tin nhắn:', error);
+      console.error(rule.errorMessage, error);
     }
+  }));
 });
-
-client.on(Events.MessageCreate, async (message) => {
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-    const exactWordRegex = /(?<![\p{L}\p{N}_])lmh(?![\p{L}\p{N}_])/iu;
-
-    if (!exactWordRegex.test(message.content)) {
-        return;
-    }
-
-    try {
-        await message.channel.send('https://media.discordapp.net/attachments/1471032678739607666/1561750746934804570/476819257_594089113600190_7242581795811065303_n.png?ex=6ad77d39&is=6ad62bb9&hm=f0591578c67ab32e0afec7a77e818e76475f3d2866c2fefa79ed2ac27dea593f&=&format=webp&quality=lossless&width=768&height=768');
-    } catch (error) {
-        console.error('Không thể gửi tin nhắn:', error);  
-    }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-    const exactWordRegex = /(?<![\p{L}\p{N}_])huu gia(?![\p{L}\p{N}_])/iu;
-
-    if (!exactWordRegex.test(message.content)) {
-        return;
-    }
-
-    try {
-        await message.channel.send('REST IN PEACE HUU GIA CHET' + '\n' + 'https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless');
-    } catch (error) {
-        console.error('Không thể gửi tin nhắn:', error);  
-    }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-    const exactWordRegex = /(?<![\p{L}\p{N}_])bac ho(?![\p{L}\p{N}_])/iu;
-
-    if (!exactWordRegex.test(message.content)) {
-        return;
-    }
-
-    try {
-        await message.channel.send('câm cmm đi th già khang hoàng');
-    } catch (error) {
-        console.error('Không thể gửi tin nhắn:', error);
-    }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-    // Lọc nhanh các điều kiện cơ bản
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-
-    // Chuyển toàn bộ tin nhắn thành chữ thường và loại bỏ dấu tiếng Việt để xử lý chính xác
-    const cleanContent = message.content
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d");
-
-    // Regex bắt chính xác cụm "tommy tung" hoặc từ "tommy" đứng độc lập
-    const exactWordRegex = /(?<![\p{L}\p{N}_])(tommy tung|tommy)(?![\p{L}\p{N}_])/iu;
-
-    if (!exactWordRegex.test(cleanContent)) {
-        return;
-    }
-
-    try {
-        await message.channel.send('https://media.discordapp.net/attachments/1273585271446966383/1302246591687561216/427756124_3685305565081403_7862583321640026974_n.png?ex=6ad75d26&is=6ad60ba6&hm=7195ba154f26a18d20252fd6bd90f256cdef8be73af3c1d81b8cb38c5c8cd627&=&format=webp&quality=lossless');
-    } catch (error) {
-        console.error('Không thể gửi ảnh thằng ngu tommy:', error);  
-    }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-    // Lọc nhanh các điều kiện cơ bản
-    if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
-        return;
-    }
-
-    // Chuyển toàn bộ tin nhắn thành chữ thường và loại bỏ dấu tiếng Việt để xử lý chính xác
-    const cleanContent = message.content
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d");
-
-    // Chỉ cần chứa "vlr" hoặc "valorant" (ví dụ: "chơi valorantko", "vlrnha" đều bắt được)
-    const containsKeyword = cleanContent.includes("vlr") || cleanContent.includes("valorant");
-
-    if (!containsKeyword) {
-        return;
-    }
-
-    try {
-        // Thay link ảnh hoặc tin nhắn phản hồi của bạn vào đây
-        await message.channel.send('https://i.pinimg.com/736x/5c/6d/d4/5c6dd43c4911e1bf3badb8053c18e565.jpg'); 
-    } catch (error) {
-        console.error('Không thể gửi tin nhắn phản hồi Valorant:', error);  
-    }
-});
-
-
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) {
