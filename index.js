@@ -360,7 +360,7 @@ const messageResponses = [
   },
   {
     name: 'lmh',
-    pattern: /^(?:<@!?\d+>\s*)*lmh|le minh huyen$/iu,
+    pattern: /^(lmh|le minh huyen)$/iu,
     response: 'https://media.discordapp.net/attachments/1471032678739607666/1561750746934804570/476819257_594089113600190_7242581795811065303_n.png?ex=6ad77d39&is=6ad62bb9&hm=f0591578c67ab32e0afec7a77e818e76475f3d2866c2fefa79ed2ac27dea593f&=&format=webp&quality=lossless&width=768&height=768',
     errorMessage: 'Không thể gửi tin nhắn:',
   },
