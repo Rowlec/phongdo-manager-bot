@@ -416,8 +416,7 @@ const messageResponses = [
   },
   {
     name: 'xg',
-    excludePattern: /(?<![\p{L}\p{N}_])(xóng|xỏng|xòng|xọng|xõng)(?![\p{L}\p{N}_])/u,
-    pattern: /(?<![\p{L}\p{N}_])xg|xog|xong(?![\p{L}\p{N}_])/u,
+    pattern: /^(xg|xog)$/iu,
     normalize: true,
     response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
