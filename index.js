@@ -388,7 +388,7 @@ const messageResponses = [
     // Bọc cụm HOẶC trong ngoặc đơn ( ) và thêm ranh giới từ ở hai đầu
     pattern: /(?<![\p{L}\p{N}_])(vlr|valorant)(?![\p{L}\p{N}_])/u,
     normalize: true,
-    response: 'https://i.pinimg.com/736x/5c/6d/d4/5c6dd43c4911e1bf3badb8053c18e565.jpg',
+    response: '<@452405637301665793>',
     errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
   },
   {
@@ -400,8 +400,7 @@ const messageResponses = [
   },
     {
     name: 'xui',
-    excludePattern: /(?<![\p{L}\p{N}_])(xúi|xủi|xùi|xụi|xũi|xúi)(?![\p{L}\p{N}_])/u,
-    pattern: /(?<![\p{L}\p{N}_])xui(?![\p{L}\p{N}_])/u,
+    pattern: /^(?:<@!?\d+>\s*)*xui dk$/iu,
     normalize: true,
     response: 'dung dung hop li',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xui:',
