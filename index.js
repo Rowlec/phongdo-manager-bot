@@ -360,19 +360,19 @@ const messageResponses = [
   },
   {
     name: 'lmh',
-    pattern: /(?<![\p{L}\p{N}_])lmh(?![\p{L}\p{N}_])/iu,
+    pattern: /^(?:<@!?\d+>\s*)*lmh|le minh huyen$/iu,
     response: 'https://media.discordapp.net/attachments/1471032678739607666/1561750746934804570/476819257_594089113600190_7242581795811065303_n.png?ex=6ad77d39&is=6ad62bb9&hm=f0591578c67ab32e0afec7a77e818e76475f3d2866c2fefa79ed2ac27dea593f&=&format=webp&quality=lossless&width=768&height=768',
     errorMessage: 'Không thể gửi tin nhắn:',
   },
   {
     name: 'huu gia',
-    pattern: /(?<![\p{L}\p{N}_])huu gia(?![\p{L}\p{N}_])/iu,
+    pattern: /^(?:<@!?\d+>\s*)*huu gia$/iu,
     response: 'REST IN PEACE HUU GIA CHET' + '\n' + 'https://media.discordapp.net/attachments/1471032678739607666/1561752552280957008/huu_grave.png?ex=6ad77ee8&is=6ad62d68&hm=ce41636320c1956b636497b90a94d5f064004c931e9739453a0d9d05e0efce84&=&format=webp&quality=lossless',
     errorMessage: 'Không thể gửi tin nhắn:',
   },
   {
     name: 'bac ho',
-    pattern: /(?<![\p{L}\p{N}_])bac ho(?![\p{L}\p{N}_])/iu,
+    pattern: /^(?:<@!?\d+>\s*)*bac ho$/iu,
     response: 'câm cmm đi th già khang hoàng',
     errorMessage: 'Không thể gửi tin nhắn:',
   },
@@ -380,7 +380,7 @@ const messageResponses = [
     name: 'tommy',
     pattern: /(?<![\p{L}\p{N}_])(tommy tung|tommy)(?![\p{L}\p{N}_])/iu,
     normalize: true,
-    response: 'https://media.discordapp.net/attachments/1273585271446966383/1302246591687561216/427756124_3685305565081403_7862583321640026974_n.png?ex=6ad75d26&is=6ad60ba6&hm=7195ba154f26a18d20252fd6bd90f256cdef8be73af3c1d81b8cb38c5c8cd627&=&format=webp&quality=lossless',
+    response: 'Ông bà già thằng tommy chết' + '\n' + 'https://media.discordapp.net/attachments/1273585271446966383/1302246591687561216/427756124_3685305565081403_7862583321640026974_n.png?ex=6ad75d26&is=6ad60ba6&hm=7195ba154f26a18d20252fd6bd90f256cdef8be73af3c1d81b8cb38c5c8cd627&=&format=webp&quality=lossless',
     errorMessage: 'Không thể gửi ảnh thằng ngu tommy:',
   },
   {
