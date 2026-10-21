@@ -392,14 +392,6 @@ const messageResponses = [
     errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
   },
   {
-    name: 'khon',
-    pattern: /(?<![\p{L}\p{N}_])khon(?![\p{L}\p{N}_])/u,
-    normalize: true,
-    exclude: /(?<![\p{L}\p{N}_])(khốn|khón)(?![\p{L}\p{N}_])/u,
-    response: 'https://klipy.com/gifs/an-iq-too-high-raven',
-    errorMessage: 'Không thể gửi tin nhắn:',
-  },
-  {
     name: 'gdtx',
     pattern: /(?<![\p{L}\p{N}_])(gdtx|clarx|hao hiep)(?![\p{L}\p{N}_])/u,
     normalize: true,
@@ -411,7 +403,7 @@ const messageResponses = [
     excludePattern: /(?<![\p{L}\p{N}_])(xúi|xủi|xùi|xụi|xũi|xúi)(?![\p{L}\p{N}_])/u,
     pattern: /(?<![\p{L}\p{N}_])xui(?![\p{L}\p{N}_])/u,
     normalize: true,
-    response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
+    response: 'dung dung hop li',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xui:',
   },
   {
@@ -420,13 +412,6 @@ const messageResponses = [
     normalize: true,
     response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
-  },
-  {
-    name:'hiep dam',
-    pattern: /(?<![\p{L}\p{N}_])(hiep dam|hiếp dâm|rape)(?![\p{L}\p{N}_])/u,
-    normalize: true,
-    response: 'https://klipy.com/gifs/la-peace-kai',
-    errorMessage: 'Không thể gửi tin nhắn phản hồi từ rape',
   }
 ];
 
