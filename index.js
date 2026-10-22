@@ -388,7 +388,8 @@ const messageResponses = [
     // Bọc cụm HOẶC trong ngoặc đơn ( ) và thêm ranh giới từ ở hai đầu
     pattern: /(?<![\p{L}\p{N}_])(vlr|valorant)(?![\p{L}\p{N}_])/u,
     normalize: true,
-    response: '<@452405637301665793>',
+    cooldownMs: 30 * 60 * 1000,
+    response: '<@452405637301665793>'+ ' ' +'<@562115408711385089>',
     errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
   },
   {
@@ -409,10 +410,13 @@ const messageResponses = [
     name: 'xg',
     pattern: /^(xg|xog)$/iu,
     normalize: true,
+    cooldownMs: 30 * 60 * 1000,
     response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
   }
 ];
+
+const responseCooldowns = new Map();
 
 client.on(Events.MessageCreate, async (message) => {
   if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
@@ -431,9 +435,22 @@ client.on(Events.MessageCreate, async (message) => {
       return;
     }
 
+    const now = Date.now();
+    const cooldownUntil = responseCooldowns.get(rule.name) ?? 0;
+    if (now < cooldownUntil) {
+      return;
+    }
+
+    if (rule.cooldownMs) {
+      responseCooldowns.set(rule.name, now + rule.cooldownMs);
+    }
+
     try {
       await message.channel.send(rule.response);
     } catch (error) {
+      if (rule.cooldownMs && responseCooldowns.get(rule.name) === now + rule.cooldownMs) {
+        responseCooldowns.delete(rule.name);
+      }
       console.error(rule.errorMessage, error);
     }
   }));
