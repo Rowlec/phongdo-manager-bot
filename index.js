@@ -419,10 +419,20 @@ const messageResponses = [
 ];
 
 const responseCooldowns = new Map();
+const processedMessageIds = new Set();
 
 client.on(Events.MessageCreate, async (message) => {
   if (message.guildId !== GUILD_ID || !message.inGuild() || message.author.bot || message.webhookId) {
     return;
+  }
+
+  // Ignore duplicate or replayed gateway events so reconnects cannot cause a burst.
+  if (processedMessageIds.has(message.id)) {
+    return;
+  }
+  processedMessageIds.add(message.id);
+  if (processedMessageIds.size > 10_000) {
+    processedMessageIds.clear();
   }
 
   const contentLower = message.content.toLowerCase();
@@ -438,12 +448,6 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     const now = Date.now();
-    // Discord may replay missed gateway events after a reconnect. Never send
-    // cooldown responses for old messages as if they were newly posted.
-    if (rule.cooldownMs && now - message.createdTimestamp > rule.maxMessageAgeMs) {
-      return;
-    }
-
     const cooldownUntil = responseCooldowns.get(rule.name) ?? 0;
     if (now < cooldownUntil) {
       return;
