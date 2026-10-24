@@ -28,6 +28,8 @@ const {
   TARGET_ID = '524438745772982272',
 } = process.env;
 
+const discordToken = BOT_TOKEN?.trim();
+
 app.get('/', (req, res) => {
   res.send('Bot đang chạy');
 });
@@ -529,10 +531,20 @@ process.on('uncaughtException', (error) => {
 
 logMissingEnv();
 
-if (BOT_TOKEN) {
-  client.login(BOT_TOKEN).catch((error) => {
+async function loginDiscord() {
+  if (!discordToken) {
+    console.error('Lỗi: Không thể đăng nhập Discord bot vì thiếu BOT_TOKEN.');
+    return;
+  }
+
+  console.log('Đang kết nối Discord Gateway...');
+  try {
+    await client.login(discordToken);
+    console.log('Đã gửi yêu cầu đăng nhập Discord Gateway.');
+  } catch (error) {
     console.error('Lỗi đăng nhập discord bot:', error);
-  });
-} else {
-  console.error('Lỗi: Không thể đăng nhập Discord bot vì thiếu BOT_TOKEN.');
+    setTimeout(loginDiscord, 10_000);
+  }
 }
+
+loginDiscord();
