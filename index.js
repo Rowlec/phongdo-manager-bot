@@ -388,7 +388,8 @@ const messageResponses = [
     // Bọc cụm HOẶC trong ngoặc đơn ( ) và thêm ranh giới từ ở hai đầu
     pattern: /(?<![\p{L}\p{N}_])(vlr|valorant)(?![\p{L}\p{N}_])/u,
     normalize: true,
-    cooldownMs: 30 * 60 * 1000,
+    cooldownMs: 10 * 60 * 1000,
+    maxMessageAgeMs: 60 * 1000,
     response: '<@452405637301665793>'+ ' ' +'<@562115408711385089>',
     errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
   },
@@ -410,7 +411,8 @@ const messageResponses = [
     name: 'xg',
     pattern: /^(xg|xog)$/iu,
     normalize: true,
-    cooldownMs: 30 * 60 * 1000,
+    cooldownMs: 10 * 60 * 1000,
+    maxMessageAgeMs: 60 * 1000,
     response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
   }
@@ -436,6 +438,12 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     const now = Date.now();
+    // Discord may replay missed gateway events after a reconnect. Never send
+    // cooldown responses for old messages as if they were newly posted.
+    if (rule.cooldownMs && now - message.createdTimestamp > rule.maxMessageAgeMs) {
+      return;
+    }
+
     const cooldownUntil = responseCooldowns.get(rule.name) ?? 0;
     if (now < cooldownUntil) {
       return;
