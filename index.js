@@ -551,6 +551,14 @@ async function loginDiscord() {
 
   console.log('Đang kết nối Discord Gateway...');
   try {
+    const tokenCheck = await fetch('https://discord.com/api/v10/users/@me', {
+      headers: { Authorization: `Bot ${discordToken}` },
+    });
+    console.log(`Discord REST kiểm tra token: HTTP ${tokenCheck.status}`);
+    if (!tokenCheck.ok) {
+      throw new Error(`Discord REST từ chối token (HTTP ${tokenCheck.status}).`);
+    }
+
     await Promise.race([
       client.login(discordToken),
       new Promise((_, reject) => {
