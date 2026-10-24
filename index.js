@@ -351,6 +351,18 @@ client.on('shardError', (error) => {
   console.error('Lỗi kết nối Discord gateway:', error);
 });
 
+client.on(Events.Debug, (info) => {
+  console.log(`[Discord debug] ${info}`);
+});
+
+client.on(Events.Warn, (info) => {
+  console.warn(`[Discord warn] ${info}`);
+});
+
+client.on('shardDisconnect', (closeEvent, shardId) => {
+  console.error(`[Discord disconnect] shard ${shardId}:`, closeEvent);
+});
+
 // Thêm hoặc sửa từ khóa, phản hồi tại đây. Mỗi mục khớp sẽ gửi một phản hồi.
 // normalize: bỏ dấu tiếng Việt; exclude: bỏ qua mục này nếu khớp nội dung chữ thường.
 const messageResponses = [
@@ -539,10 +551,16 @@ async function loginDiscord() {
 
   console.log('Đang kết nối Discord Gateway...');
   try {
-    await client.login(discordToken);
+    await Promise.race([
+      client.login(discordToken),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Discord Gateway handshake quá thời gian 30 giây.')), 30_000);
+      }),
+    ]);
     console.log('Đã gửi yêu cầu đăng nhập Discord Gateway.');
   } catch (error) {
     console.error('Lỗi đăng nhập discord bot:', error);
+    client.destroy();
     setTimeout(loginDiscord, 10_000);
   }
 }
