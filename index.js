@@ -29,6 +29,7 @@ const {
 } = process.env;
 
 const discordToken = BOT_TOKEN?.trim();
+let discordTokenVerified = false;
 
 app.get('/', (req, res) => {
   res.send('Bot đang chạy');
@@ -551,12 +552,21 @@ async function loginDiscord() {
 
   console.log('Đang kết nối Discord Gateway...');
   try {
-    const tokenCheck = await fetch('https://discord.com/api/v10/users/@me', {
-      headers: { Authorization: `Bot ${discordToken}` },
-    });
-    console.log(`Discord REST kiểm tra token: HTTP ${tokenCheck.status}`);
-    if (!tokenCheck.ok) {
-      throw new Error(`Discord REST từ chối token (HTTP ${tokenCheck.status}).`);
+    if (!discordTokenVerified) {
+      const tokenCheck = await fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bot ${discordToken}` },
+      });
+      console.log(`Discord REST kiểm tra token: HTTP ${tokenCheck.status}`);
+      if (tokenCheck.status === 429) {
+        const retryAfter = Number(tokenCheck.headers.get('retry-after')) || 60;
+        throw Object.assign(new Error(`Discord REST đang rate-limit; thử lại sau ${retryAfter}s.`), {
+          retryAfterMs: Math.max(retryAfter * 1000, 60_000),
+        });
+      }
+      if (!tokenCheck.ok) {
+        throw new Error(`Discord REST từ chối token (HTTP ${tokenCheck.status}).`);
+      }
+      discordTokenVerified = true;
     }
 
     await Promise.race([
@@ -569,7 +579,7 @@ async function loginDiscord() {
   } catch (error) {
     console.error('Lỗi đăng nhập discord bot:', error);
     client.destroy();
-    setTimeout(loginDiscord, 10_000);
+    setTimeout(loginDiscord, error.retryAfterMs ?? 60_000);
   }
 }
 
