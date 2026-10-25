@@ -29,7 +29,6 @@ const {
 } = process.env;
 
 const discordToken = BOT_TOKEN?.trim();
-let discordTokenVerified = false;
 
 app.get('/', (req, res) => {
   res.send('Bot đang chạy');
@@ -403,8 +402,6 @@ const messageResponses = [
     // Bọc cụm HOẶC trong ngoặc đơn ( ) và thêm ranh giới từ ở hai đầu
     pattern: /(?<![\p{L}\p{N}_])(vlr|valorant)(?![\p{L}\p{N}_])/u,
     normalize: true,
-    cooldownMs: 10 * 60 * 1000,
-    maxMessageAgeMs: 60 * 1000,
     response: '<@452405637301665793>'+ ' ' +'<@562115408711385089>',
     errorMessage: 'Không thể gửi tin nhắn phản hồi Valorant:',
   },
@@ -426,14 +423,11 @@ const messageResponses = [
     name: 'xg',
     pattern: /^(xg|xog)$/iu,
     normalize: true,
-    cooldownMs: 10 * 60 * 1000,
-    maxMessageAgeMs: 60 * 1000,
     response: 'https://tenor.com/view/what-happened-what-happened-to-you-as-a-child-what-kind-of-trauma-makes-you-act-like-this-stare-stare-cat-gif-2454779732634892782',
     errorMessage: 'Không thể gửi tin nhắn phản hồi từ xong:',
   }
 ];
 
-const responseCooldowns = new Map();
 const processedMessageIds = new Set();
 
 client.on(Events.MessageCreate, async (message) => {
@@ -462,20 +456,7 @@ client.on(Events.MessageCreate, async (message) => {
       return;
     }
 
-    const now = Date.now();
-    const cooldownUntil = responseCooldowns.get(rule.name) ?? 0;
-    if (now < cooldownUntil) {
-      return;
-    }
-
-    if (rule.cooldownMs) {
-      responseCooldowns.set(rule.name, now + rule.cooldownMs);
-    }
-
     void message.channel.send(rule.response).catch((error) => {
-      if (rule.cooldownMs && responseCooldowns.get(rule.name) === now + rule.cooldownMs) {
-        responseCooldowns.delete(rule.name);
-      }
       console.error(rule.errorMessage, error);
     });
   }
@@ -550,34 +531,12 @@ async function loginDiscord() {
 
   console.log('Đang kết nối Discord Gateway...');
   try {
-    if (!discordTokenVerified) {
-      const tokenCheck = await fetch('https://discord.com/api/v10/users/@me', {
-        headers: { Authorization: `Bot ${discordToken}` },
-      });
-      console.log(`Discord REST kiểm tra token: HTTP ${tokenCheck.status}`);
-      if (tokenCheck.status === 429) {
-        const retryAfter = Number(tokenCheck.headers.get('retry-after')) || 60;
-        throw Object.assign(new Error(`Discord REST đang rate-limit; thử lại sau ${retryAfter}s.`), {
-          retryAfterMs: Math.max(retryAfter * 1000, 60_000),
-        });
-      }
-      if (!tokenCheck.ok) {
-        throw new Error(`Discord REST từ chối token (HTTP ${tokenCheck.status}).`);
-      }
-      discordTokenVerified = true;
-    }
-
-    await Promise.race([
-      client.login(discordToken),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Discord Gateway handshake quá thời gian 30 giây.')), 30_000);
-      }),
-    ]);
+    await client.login(discordToken);
     console.log('Đã gửi yêu cầu đăng nhập Discord Gateway.');
   } catch (error) {
     console.error('Lỗi đăng nhập discord bot:', error);
     client.destroy();
-    setTimeout(loginDiscord, error.retryAfterMs ?? 60_000);
+    setTimeout(loginDiscord, 60_000);
   }
 }
 
