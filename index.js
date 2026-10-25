@@ -456,7 +456,7 @@ client.on(Events.MessageCreate, async (message) => {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd');
 
-  await Promise.all(messageResponses.map(async (rule) => {
+  for (const rule of messageResponses) {
     const content = rule.normalize ? cleanContent : message.content;
     if (rule.exclude?.test(contentLower) || !rule.pattern.test(content)) {
       return;
@@ -472,15 +472,13 @@ client.on(Events.MessageCreate, async (message) => {
       responseCooldowns.set(rule.name, now + rule.cooldownMs);
     }
 
-    try {
-      await message.channel.send(rule.response);
-    } catch (error) {
+    void message.channel.send(rule.response).catch((error) => {
       if (rule.cooldownMs && responseCooldowns.get(rule.name) === now + rule.cooldownMs) {
         responseCooldowns.delete(rule.name);
       }
       console.error(rule.errorMessage, error);
-    }
-  }));
+    });
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
